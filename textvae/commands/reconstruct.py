@@ -1,37 +1,42 @@
 import argparse
+import sys
 from pathlib import Path
+from typing import Iterator
 
 import torch
 
 from textvae.commands.subcommand import Subcommand
-from textvae.data.archive import Archive
-from textvae.data.sampler import SimpleBatchSampler
+from textvae.textvae import TextVAE
 
 
 @Subcommand.register("reconstruct")
 class ReconstructCommand(Subcommand):
     def setup(self) -> None:
         self.parser.add_argument("archive", type=Path)
-        self.parser.add_argument("-i", "--input-filename", type=Path)
-        self.parser.add_argument("-o", "--output-filename", type=Path)
+        self.parser.add_argument("-i", "--input-filename", type=Path, default=None)
+        self.parser.add_argument("-o", "--output-filename", type=Path, default=None)
+        self.parser.add_argument("-t", "--input-text", action="append", default=[])
         self.parser.add_argument("--max-steps", type=int, default=100)
         self.parser.add_argument("--batch-size", type=int, default=32)
         self.parser.add_argument("--device", type=torch.device, default=torch.device("cpu"))
 
+    def load_texts(self, args: argparse.Namespace) -> Iterator[str]:
+        if args.input_filename is not None:
+            with args.input_filename.open() as infile:
+                yield from (line.strip() for line in infile)
+        yield from args.input_text
+
     def run(self, args: argparse.Namespace) -> None:
-        archive = Archive.load(args.archive)
+        textvae = TextVAE.from_archive(args.archive)
+        textvae.set_device(args.device)
 
-        datamodule = archive.datamodule
-        dataset = datamodule.build_dataset(args.input_filename)
-        dataloader = datamodule.build_dataloader(dataset, SimpleBatchSampler(batch_size=args.batch_size))
-
-        model = archive.model.to(device=args.device).eval()
-
-        with torch.no_grad(), open(args.output_filename, "w") as txtfile:  # type: ignore[no-untyped-call]
-            for batch in dataloader:
-                batch = batch.to(device=args.device)
-                _, _, latent = model.encode(batch)
-                _, predictions = model.decode(latent, max_decoding_steps=args.max_steps)
-                texts = model.indices_to_tokens(datamodule.vocab, predictions)
-                for tokens in texts:
-                    print(" ".join(tokens), file=txtfile)
+        txtfile = open(args.output_filename, "w") if args.output_filename else sys.stdout
+        with txtfile:
+            texts = self.load_texts(args)
+            reconstructions = textvae.reconstruct(
+                texts,
+                max_decoding_steps=args.max_steps,
+                batch_size=args.batch_size,
+            )
+            for tokens in reconstructions:
+                print(" ".join(tokens), file=txtfile)

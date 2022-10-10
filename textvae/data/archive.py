@@ -5,7 +5,7 @@ from typing import NamedTuple, Union
 import torch
 
 from textvae.data.datamodule import TextVaeDataModule
-from textvae.textvae import TextVAE
+from textvae.models.textvae import TextVAE
 
 
 class Archive(NamedTuple):

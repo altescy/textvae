@@ -10,7 +10,7 @@ from colt import Lazy
 from textvae.data.archive import Archive
 from textvae.data.datamodule import TextVaeDataModule
 from textvae.data.sampler import BatchSampler
-from textvae.textvae import TextVAE
+from textvae.models.textvae import TextVAE
 
 
 class Trainer:

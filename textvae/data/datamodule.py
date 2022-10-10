@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Iterator, List, NamedTuple, Optional, Union
+from typing import Iterable, Iterator, List, NamedTuple, Optional, Union
 
 import torch
 import torchtext.transforms as T
@@ -38,20 +38,19 @@ class TextVaeDataModule:
     def vocab(self) -> Vocabulary:
         return self._vocab
 
-    def build_dataset(
+    def build_dataset_from_texts(
         self,
-        filename: Union[str, PathLike],
+        texts: Iterable[str],
         *,
         update_vocab: bool = False,
     ) -> TextVaeDataset:
         dataset: TextVaeDataset = []
 
         def yield_tokens() -> Iterator[List[str]]:
-            with open(filename, "r") as f:
-                for line in f:
-                    item = self._tokenizer.tokenize(line) + [EOS_TOKEN]
-                    dataset.append(item)
-                    yield item
+            for text in texts:
+                item = self._tokenizer.tokenize(text) + [EOS_TOKEN]
+                dataset.append(item)
+                yield item
 
         if update_vocab:
             self._vocab.build(yield_tokens())
@@ -59,6 +58,21 @@ class TextVaeDataModule:
             list(yield_tokens())
 
         return dataset
+
+    def build_dataset(
+        self,
+        filename: Union[str, PathLike],
+        *,
+        update_vocab: bool = False,
+    ) -> TextVaeDataset:
+        def read_file() -> Iterator[str]:
+            with open(filename, "r") as txtfile:
+                yield from txtfile
+
+        return self.build_dataset_from_texts(
+            texts=read_file(),
+            update_vocab=update_vocab,
+        )
 
     def build_dataloader(
         self,
