@@ -18,7 +18,7 @@ class Trainer:
         self,
         dataset_filename: Union[str, PathLike],
         datamodule: TextVaeDataModule,
-        batch_sampler: BatchSampler[Item],
+        batch_sampler: BatchSampler,
         model: Lazy[TextVAE],
         optimizer: Optional[Lazy[torch.optim.Optimizer]] = None,
         max_epochs: int = 10,
