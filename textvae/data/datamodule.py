@@ -6,7 +6,7 @@ import torchtext.transforms as T
 from torch.utils.data import DataLoader, Dataset
 
 from textvae.data.tokenizers import Tokenizer, WhitespaceTokenizer
-from textvae.data.vocabulary import PAD_TOKEN, Vocabulary
+from textvae.data.vocabulary import EOS_TOKEN, PAD_TOKEN, Vocabulary
 
 Item = List[str]
 
@@ -61,12 +61,14 @@ class TextVaeDataModule:
         def yield_tokens() -> Iterator[List[str]]:
             with open(filename, "r") as f:
                 for line in f:
-                    item = self._tokenizer.tokenize(line)
+                    item = self._tokenizer.tokenize(line) + [EOS_TOKEN]
                     items.append(item)
                     yield item
 
         if update_vocab:
             self._vocab.build(yield_tokens())
+        else:
+            list(yield_tokens())
 
         return TextVaeDataset(items)
 
