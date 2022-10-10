@@ -8,7 +8,7 @@ from alive_progress import alive_bar
 from colt import Lazy
 
 from textvae.data.archive import Archive
-from textvae.data.datamodule import Item, TextVaeDataModule
+from textvae.data.datamodule import TextVaeDataModule
 from textvae.data.sampler import BatchSampler
 from textvae.textvae import TextVAE
 
