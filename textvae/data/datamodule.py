@@ -3,12 +3,14 @@ from typing import Iterator, List, NamedTuple, Optional, Union
 
 import torch
 import torchtext.transforms as T
-from torch.utils.data import DataLoader, Dataset
 
+from textvae.data.dataloader import DataLoader
+from textvae.data.sampler import BatchSampler
 from textvae.data.tokenizers import Tokenizer, WhitespaceTokenizer
 from textvae.data.vocabulary import EOS_TOKEN, PAD_TOKEN, Vocabulary
 
 Item = List[str]
+TextVaeDataset = List[Item]
 
 
 class Batch(NamedTuple):
@@ -21,20 +23,6 @@ class Batch(NamedTuple):
 
     def __len__(self) -> int:
         return len(self.tokens)
-
-
-class TextVaeDataset(Dataset[Item]):
-    def __init__(self, items: List[Item]) -> None:
-        self.items = items
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-    def __getitem__(self, index: int) -> Item:
-        return self.items[index]
-
-    def __iter__(self) -> Iterator[Item]:
-        return iter(self.items)
 
 
 class TextVaeDataModule:
@@ -56,13 +44,13 @@ class TextVaeDataModule:
         *,
         update_vocab: bool = False,
     ) -> TextVaeDataset:
-        items: List[List[str]] = []
+        dataset: TextVaeDataset = []
 
         def yield_tokens() -> Iterator[List[str]]:
             with open(filename, "r") as f:
                 for line in f:
                     item = self._tokenizer.tokenize(line) + [EOS_TOKEN]
-                    items.append(item)
+                    dataset.append(item)
                     yield item
 
         if update_vocab:
@@ -70,14 +58,12 @@ class TextVaeDataModule:
         else:
             list(yield_tokens())
 
-        return TextVaeDataset(items)
+        return dataset
 
     def build_dataloader(
         self,
         dataset: TextVaeDataset,
-        *,
-        batch_size: int = 32,
-        shuffle: bool = False,
+        batch_sampler: BatchSampler[Item],
     ) -> DataLoader:
         token_transforms = T.Sequential(
             T.VocabTransform(self.vocab.vocab),
@@ -85,13 +71,13 @@ class TextVaeDataModule:
         )
         mask_transforms = T.ToTensor(padding_value=0, dtype=torch.bool)
 
-        def collate_fn(items: List[Item]) -> Batch:
+        def collator(items: List[Item]) -> Batch:
             tokens = token_transforms(items)
             mask = mask_transforms([[1] * len(tokens) for tokens in items])
             return Batch(tokens=tokens, mask=mask)
 
         return DataLoader(
             dataset,
-            batch_size=batch_size,
-            collate_fn=collate_fn,
+            collator=collator,
+            batch_sampler=batch_sampler,
         )

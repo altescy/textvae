@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 
 from textvae.commands.subcommand import Subcommand
+from textvae.data.sampler import SimpleBatchSampler
 from textvae.trainer import TrainingState
 
 
@@ -29,7 +30,7 @@ class ReconstructCommand(Subcommand):
 
         datamodule = archive.datamodule
         dataset = datamodule.build_dataset(args.input_filename)
-        dataloader = datamodule.build_dataloader(dataset, batch_size=args.batch_size)
+        dataloader = datamodule.build_dataloader(dataset, SimpleBatchSampler(batch_size=args.batch_size))
 
         model = archive.model.to(device=args.device).eval()
 
