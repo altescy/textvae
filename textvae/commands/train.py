@@ -58,4 +58,7 @@ class TrainCommand(Subcommand):
         self.save_config(config, workdir / "config.json")
 
         trainer = colt.build(config, Trainer)
-        trainer.train(workdir)
+        try:
+            trainer.train(workdir)
+        except KeyboardInterrupt:
+            pass
