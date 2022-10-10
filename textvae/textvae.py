@@ -66,6 +66,22 @@ class TextVAE:
                 mean, logvar, _ = self._model.encode(batch)
                 yield from zip(mean, logvar)
 
+    def decode(
+        self,
+        latents: torch.Tensor,
+        *,
+        batch_size: int = 16,
+        max_decoding_steps: int = 100,
+    ) -> Iterator[List[str]]:
+        self._model.eval()
+        self._model.to(device=self._device)
+        with torch.no_grad():  # type: ignore[no-untyped-call]
+            for batch in torch.split(latents, batch_size):  # type: ignore[no-untyped-call]
+                batch = batch.to(device=self._device)
+                _, predictions = self._model.decode(batch, max_decoding_steps=max_decoding_steps)
+                decoded_texts = self._model.indices_to_tokens(self._datamodule.vocab, predictions)
+                yield from decoded_texts
+
     @classmethod
     def from_archive(cls, archive: Union[str, PathLike, Archive]) -> "TextVAE":
         if not isinstance(archive, Archive):
