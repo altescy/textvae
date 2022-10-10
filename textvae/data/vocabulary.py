@@ -38,6 +38,9 @@ class Vocabulary(torch.nn.Module):
     def forward(self, tokens: List[str]) -> List[int]:
         return cast(List[int], self.vocab(tokens))
 
+    def lookup_token(self, index: int) -> str:
+        return cast(str, self.vocab.lookup_token(index))
+
     def __contains__(self, token: str) -> bool:
         return token in self.vocab
 
