@@ -94,7 +94,10 @@ class TextVAE(torch.nn.Module):
         batch_size, _, vocab_size = logits.size()
         logits = logits.masked_select(batch.mask.unsqueeze(2)).view(-1, vocab_size)
         targets = batch.tokens.masked_select(batch.mask).view(-1)
-        loss = torch.nn.functional.cross_entropy(logits, targets, reduction="sum", ignore_index=self._pad_index) / batch_size
+        loss = (
+            torch.nn.functional.cross_entropy(logits, targets, reduction="sum", ignore_index=self._pad_index)
+            / batch_size
+        )
         return loss
 
     def _kdl_loss(self, mean: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
