@@ -1,4 +1,3 @@
-import dataclasses
 import pickle
 from os import PathLike
 from pathlib import Path
@@ -8,16 +7,10 @@ import torch
 from alive_progress import alive_bar
 from colt import Lazy
 
+from textvae.data.archive import Archive
 from textvae.data.datamodule import Item, TextVaeDataModule
 from textvae.data.sampler import BatchSampler
 from textvae.textvae import TextVAE
-
-
-@dataclasses.dataclass
-class TrainingState:
-    datamodule: TextVaeDataModule
-    model: TextVAE
-    optimizer: torch.optim.Optimizer
 
 
 class Trainer:
@@ -39,7 +32,7 @@ class Trainer:
         self._max_epochs = max_epochs
         self._device = torch.device(device)
 
-    def train(self, workdir: Union[str, PathLike]) -> TrainingState:
+    def train(self, workdir: Union[str, PathLike]) -> Archive:
         workdir = Path(workdir)
         workdir.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +42,7 @@ class Trainer:
         model = self._model_constructor.construct(vocab=self._datamodule.vocab)
         optimizer = self._optimizer_constructor.construct(params=model.parameters())
 
-        training_state = TrainingState(
+        training_state = Archive(
             datamodule=self._datamodule,
             model=model,
             optimizer=optimizer,
