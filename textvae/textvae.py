@@ -79,7 +79,7 @@ class TextVAE(torch.nn.Module):
             inputs = inputs.unsqueeze(1)
             mask = cast(torch.BoolTensor, mask.unsqueeze(1))
 
-            if batch is not None and (inputs == self._eos_index).all():
+            if batch is None and (inputs == self._eos_index).all():
                 break
 
         logits = torch.stack(step_logits, dim=1)
@@ -92,9 +92,9 @@ class TextVAE(torch.nn.Module):
         batch: Batch,
     ) -> torch.Tensor:
         batch_size, _, vocab_size = logits.size()
-        logits = logits.masked_select(batch.mask.unsqueeze(-1)).view(-1, vocab_size)
+        logits = logits.masked_select(batch.mask.unsqueeze(2)).view(-1, vocab_size)
         targets = batch.tokens.masked_select(batch.mask).view(-1)
-        loss = torch.nn.functional.cross_entropy(logits, targets, reduction="sum") / batch_size
+        loss = torch.nn.functional.cross_entropy(logits, targets, reduction="sum", ignore_index=self._pad_index) / batch_size
         return loss
 
     def _kdl_loss(self, mean: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
@@ -127,3 +127,15 @@ class TextVAE(torch.nn.Module):
             output_dict["loss"] = loss["reconstruction_loss"] + loss["kld_loss"]
 
         return output_dict
+
+    def indices_to_tokens(self, vocab: Vocabulary, indices: torch.Tensor) -> List[List[str]]:
+        output: List[List[str]] = []
+        tensor = indices.detach().cpu()
+        for token_indices in tensor:
+            tokens: List[str] = []
+            for token_index in token_indices:
+                if token_index == self._eos_index:
+                    break
+                tokens.append(vocab.lookup_token(token_index))
+            output.append(tokens)
+        return output
