@@ -1,0 +1,35 @@
+{
+  "dataset_filename": "tests/fixtures/data/sentences.txt",
+  "datamodule": {
+    "tokenizer": {
+      "@type": "whitespace"
+    }
+  },
+  "model": {
+    "embedder": {
+      "@type": "embedding",
+      "embedding_dim": 10
+    },
+    "encoder": {
+      "@type": "lstm",
+      "input_size": 10,
+      "hidden_size": 10
+    },
+    "decoder": {
+      "@type": "lstm_cell",
+      "input_size": 10,
+      "hidden_size": 10
+    },
+    "scheduled_sampling_ratio": 0.5
+  },
+  "dataloader": {
+    "batch_size": 3,
+    "shuffle": true
+  },
+  "optimizer": {
+    "@type": "torch.optim.Adam",
+    "lr": 0.001
+  },
+  "max_epochs": 3,
+  "device": "cpu"
+}
