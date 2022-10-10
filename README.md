@@ -8,7 +8,7 @@ VAE implementation for text generation with PyTorch
 
 ## Usage
 
-Train VAE model:
+Train VAE model (config example: [config.json](https://github.com/altescy/textvae/blob/main/tests/fixtures/configs/textvae.json)):
 
 ```bash
 textvae train config.json --workdir output/
