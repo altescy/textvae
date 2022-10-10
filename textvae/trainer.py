@@ -62,7 +62,6 @@ class Trainer:
                 total_loss = 0.0
                 num_samples = 0
                 with alive_bar(len(dataloader), title=f"Epoch {epoch}/{self._max_epochs}") as bar:
-                    bar.text = f" -> Loss: {total_loss / num_samples if num_samples else 0:.4f}"
                     for batch in dataloader:
                         batch.to(device=self._device)
                         optimizer.zero_grad()
@@ -72,9 +71,9 @@ class Trainer:
                         optimizer.step()
                         total_loss += loss.item() * len(batch)
                         num_samples += len(batch)
+                        bar.text = f" -> Loss: {total_loss / num_samples if num_samples else 0:.4f}"
                         bar()
         finally:
-            model.eval()
             with open(workdir / "archive.pkl", "wb") as pklfile:
                 pickle.dump(training_state, pklfile)
 
