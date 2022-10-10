@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 
 from textvae import __version__
+from textvae.commands import reconstruct  # noqa: F401
 from textvae.commands import train  # noqa: F401
 from textvae.commands.subcommand import Subcommand
 
